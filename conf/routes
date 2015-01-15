@@ -15,5 +15,6 @@ GET         /register                         controllers.Register.register
 POST        /register/perform_register        controllers.Register.performRegister
 
 # sign in
-GET         /signin                           controllers.SignIn.signIn
-POST        /signin/perform_signin            controllers.SignIn.performSignIn
+GET         /signin                           controllers.SignIn.signIn(redirect: Option[String])
+POST        /signin/perform_signin            controllers.SignIn.performSignIn(redirect: Option[String])
+

@@ -1,17 +1,19 @@
 package controllers
 
-import models.UsersTable
+import java.time.{LocalTime, Duration}
+
+import _root_.oauth2.{AccessToken, AlphaNumericTokenGenerator}
+import models.{DatabaseAccess, UsersHelper}
+import play.api.cache.Cache
 import play.api.data._
 import play.api.data.Forms._
-import play.api.db.slick._
 import play.api.mvc._
+import play.api.Play.current
 
-import scala.slick.driver.H2Driver.simple._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object SignIn extends Controller {
-  val users = TableQuery[UsersTable]
-
-  def signIn = Action {
+  def signIn(redirect: Option[String]) = Action {
     Ok(views.html.login())
   }
 
@@ -22,12 +24,33 @@ object SignIn extends Controller {
     )
   )
 
-  def performSignIn = DBAction { implicit rs =>
+  def performSignIn(redirect: Option[String]) = Action.async { implicit rs =>
     val (m, pwd) = signInForm.bindFromRequest.get
 
-    users.filter(u => u.email === m).firstOption match {
-      case Some(user) => Ok(views.html.index())
-      case None => BadRequest("Пользователь не существует или заданный пароль неверен")
+    val tokenGenerator = new AlphaNumericTokenGenerator()
+
+    DatabaseAccess.getUserById(m).map {
+      case Some(user) =>
+        val pwdHash = UsersHelper.hashPassword(pwd)
+        if (pwdHash == user.passHash) {
+
+          val token = new AccessToken(m, tokenGenerator.generateToken(), Duration.ofMinutes(5))
+
+          val session = {
+            "uid" -> m
+            "token" -> token.value
+          }
+
+          Cache.set(token.value, token)
+
+          redirect match {
+            case Some(url) => Redirect(url).withSession(session)
+            case None => Ok(views.html.index()).withSession(session)
+          }
+        }
+        else BadRequest(views.html.static_pages.nosuchuser())
+
+      case None => BadRequest(views.html.static_pages.nosuchuser())
     }
   }
 }
