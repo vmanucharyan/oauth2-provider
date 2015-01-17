@@ -27,4 +27,22 @@ object DatabaseAccess {
       apps.filter(a => a.id === id).firstOption
     })
   }
+
+  def getUserApps(id: String) (implicit context: ExecutionContext) : Future[List[OAuthApp]] = Future {
+    DB.withSession(implicit s => {
+      apps.filter(app => app.userId === id).list
+    })
+  }
+
+  def insertUser(user: User) (implicit context: ExecutionContext) : Future[Unit] = Future {
+    DB.withSession(implicit s => {
+      users.insert(user)
+    })
+  }
+
+  def insertApplication(app: OAuthApp) (implicit context: ExecutionContext): Future[Unit] = Future {
+    DB.withSession(implicit s => {
+      apps.insert(app)
+    })
+  }
 }

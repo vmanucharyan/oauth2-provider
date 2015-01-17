@@ -4,7 +4,7 @@ import java.time.Duration
 
 import models.DatabaseAccess
 import models.oauth2.OAuthApp
-import oauth2.{AccessToken, AlphaNumericTokenGenerator, RandAuthCodeGenerator, AuthInfo}
+import oauth2._
 import play.Logger
 import play.api.mvc._
 import play.api.cache.Cache
@@ -26,7 +26,6 @@ object OAuth extends Controller {
 
   def grantAccess(clientId: String, redirectUrl: String) = Action { implicit rs =>
     val codeGenerator = new RandAuthCodeGenerator()
-    Logger.debug(redirectUrl)
     val code = codeGenerator.generate()
 
     Cache.set(code, clientId)
@@ -45,15 +44,26 @@ object OAuth extends Controller {
             grantType: String) = Action.async { implicit request =>
 
     Logger.debug(s"/token: code - $code")
+
+    if (grantType != "bearer")
+      Future(Redirect(redirectUri, Map("error" -> Seq("grant_type must be 'bearer'"))))
+
     Cache.getAs[String](code) match {
       case Some(cacheClientId) =>
         Logger.debug(s"$clientId $cacheClientId")
-        if (clientId equals cacheClientId) {val tokenGenerator = new AlphaNumericTokenGenerator()
+
+        if (clientId equals cacheClientId) {
+          val tokenGenerator = new AlphaNumericTokenGenerator()
           val tokenString = tokenGenerator.generateToken()
           val token = new AccessToken(clientId, tokenString, Duration.ofMinutes(5))
 
+          AuthSessionKeeper.storeToken(token)
+
           DatabaseAccess.getApplication(clientId).map {
-            case Some(app) => Redirect(redirectUri, Map("token" -> Seq(tokenString)))
+            case Some(app) =>
+              if (app.id == token.userId) Redirect(redirectUri, Map("token" -> Seq(tokenString)))
+              else Redirect(redirectUri, Map("error" -> Seq("app id does not match")))
+
             case None => Redirect(redirectUri, Map("error" -> Seq("app not found")))
           }
         }

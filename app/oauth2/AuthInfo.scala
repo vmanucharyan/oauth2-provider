@@ -17,10 +17,19 @@ object AuthInfo {
       case None => None
     }
 
+  def userId(implicit rs: Request[AnyContent]): Option[String] =
+    acessToken match {
+      case Some(token) => Some(token.userId)
+      case None => None
+    }
+
   private def getUserToken() (implicit rs: Request[AnyContent]): Option[String] =
-    checkHeader() match {
+    checkSession() match {
       case Some(token) => Some(token)
-      case None => checkSession()
+      case None => checkHeader() match {
+        case Some(headerToken) => Some(headerToken)
+        case None => checkQuery()
+      }
     }
 
   private def checkHeader() (implicit rs: Request[AnyContent]): Option[String] =
@@ -28,6 +37,12 @@ object AuthInfo {
 
   private def checkSession() (implicit rs: Request[AnyContent]): Option[String] =
     rs.session.get("token")
+
+  private def checkQuery() (implicit rs: Request[AnyContent]): Option[String] =
+    rs.queryString.get("token") match {
+      case Some(sequence) => Some(sequence(0))
+      case None => None
+    }
 
   private def getAccessToken(userToken: String) (implicit rs: Request[AnyContent]): Option[AccessToken] =
     Cache.getAs[AccessToken](userToken)

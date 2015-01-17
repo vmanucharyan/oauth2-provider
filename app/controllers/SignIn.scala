@@ -37,8 +37,8 @@ object SignIn extends Controller {
       case Some(user) =>
         val pwdHash = UsersHelper.hashPassword(pwd)
         if (pwdHash == user.passHash) {
-
           val token = new AccessToken(m, tokenGenerator.generateToken(), Duration.ofMinutes(5))
+
           AuthSessionKeeper.storeToken(token)
 
           Logger.debug(s"$redirectUri")
@@ -57,6 +57,7 @@ object SignIn extends Controller {
   def signOut() = Action { implicit request =>
     AuthInfo.acessToken match {
       case Some(token) => AuthSessionKeeper.removeToken(token)
+      case None =>
     }
 
     Redirect(routes.Application.index()).withNewSession
