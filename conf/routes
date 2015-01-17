@@ -17,6 +17,7 @@ POST        /register/perform_register        controllers.Register.performRegist
 # sign in
 GET         /signin                           controllers.SignIn.signIn(redirect: Option[String] ?= None)
 POST        /signin/perform_signin            controllers.SignIn.performSignIn(redirect_uri: Option[String])
+GET         /sign_out                         controllers.SignIn.signOut()
 
 # OAuth2
 GET         /oauth2/auth                      controllers.OAuth.auth(client_id: String, redirect_uri: String)

@@ -1,4 +1,6 @@
-@(title: String)(content: Html)
+@(title: String)(content: Html)(implicit request: Request[AnyContent])
+
+@import _root_.oauth2.AuthInfo
 
 <!DOCTYPE html>
 
@@ -28,10 +30,19 @@
                 <ul class="nav navbar-nav">
                     <li><a href="/users">Пользователи</a></li>
                 </ul>
-                <ul class="nav navbar-nav navbar-right">
-                    <li><a href="/register">Регистрация</a></li>
-                    <li><a href="/signin">Вход</a> </li>
-                </ul>
+
+                @if(!AuthInfo.isAuthorized) {
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="/register">Регистрация</a></li>
+                        <li><a href="/signin">Вход</a> </li>
+                    </ul>
+                } else {
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="/user_profile">Мой профиль</a></li>
+                        <li><a href="/sign_out">Выйти</a> </li>
+                    </ul>
+                }
+
             </div>
         </div>
 

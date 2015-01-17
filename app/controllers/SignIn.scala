@@ -2,7 +2,7 @@ package controllers
 
 import java.time.{LocalTime, Duration}
 
-import oauth2.{AuthSessionKeeper, AccessToken, AlphaNumericTokenGenerator}
+import oauth2.{AuthInfo, AuthSessionKeeper, AccessToken, AlphaNumericTokenGenerator}
 import models.{DatabaseAccess, UsersHelper}
 import play.Logger
 import play.api.cache.Cache
@@ -14,7 +14,7 @@ import play.api.Play.current
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object SignIn extends Controller {
-  def signIn(redirect: Option[String]) = Action {
+  def signIn(redirect: Option[String]) = Action { implicit request =>
     Logger.debug(s"signin: $redirect")
     Ok(views.html.login(redirect))
   }
@@ -26,7 +26,7 @@ object SignIn extends Controller {
     )
   )
 
-  def performSignIn(redirectUri: Option[String]) = Action.async { implicit rs =>
+  def performSignIn(redirectUri: Option[String]) = Action.async { implicit request =>
     val (m, pwd) = signInForm.bindFromRequest.get
 
     Logger.debug(s"$redirectUri")
@@ -45,12 +45,20 @@ object SignIn extends Controller {
 
           redirectUri match {
             case Some(url) => Redirect(url).withSession("token" -> token.value)
-            case None => Ok(views.html.index()).withSession("token" -> token.value)
+            case None => Redirect(routes.Application.index()).withSession("token" -> token.value)
           }
         }
         else BadRequest(views.html.static_pages.nosuchuser())
 
       case None => BadRequest(views.html.static_pages.nosuchuser())
     }
+  }
+
+  def signOut() = Action { implicit request =>
+    AuthInfo.acessToken match {
+      case Some(token) => AuthSessionKeeper.removeToken(token)
+    }
+
+    Redirect(routes.Application.index()).withNewSession
   }
 }

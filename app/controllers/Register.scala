@@ -12,7 +12,7 @@ import scala.slick.driver.H2Driver.simple._
 object Register extends Controller {
   val users = TableQuery[UsersTable]
 
-  def register = Action {
+  def register = Action { implicit request =>
     Ok(views.html.register())
   }
 

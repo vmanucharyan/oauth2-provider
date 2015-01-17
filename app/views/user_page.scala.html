@@ -1,6 +1,6 @@
 @import models.oauth2.OAuthApp
 
-@(apps: List[OAuthApp])
+@(apps: List[OAuthApp])(implicit request: Request[AnyContent])
 
 @main("user profile") {
     <div class="col-md-10">
