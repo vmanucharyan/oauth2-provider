@@ -1,0 +1,20 @@
+@import models.oauth2.OAuthApp
+
+@(app: OAuthApp, clientId: String, redirectUri: String)
+
+@main("grant access") {
+    <div class="col-md-6 col-md-offset-3">
+        <div class="panel">
+            <div class="panel-heading">ПОЛУЧЕНИЕ ДОСТУПА К ВАШЕМУ АККАУНТУ</div>
+            <div class="panel-body">
+                <h5>Приложение хочет получить доступ к вашему аккаунту</h5>
+                <div>@app.id</div>
+                <div>@app.secret</div>
+                <div class="pull-right margin-top-large">
+                    <button class="btn btn-default">Отклонить</button>
+                    <button class="btn btn-primary"><a href="@{routes.OAuth.grantAccess(clientId, redirectUri)}">Разрешить</a></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}

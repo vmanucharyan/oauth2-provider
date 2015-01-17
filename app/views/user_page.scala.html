@@ -1,0 +1,17 @@
+@import models.oauth2.OAuthApp
+
+@(apps: List[OAuthApp])
+
+@main("user profile") {
+    <div class="col-md-10">
+        <h3>Приложения</h3>
+        @for(app <- apps) {
+            <div class="panel">
+                <div class="panel-body">
+                    <div>app.id</div>
+                    <div>app.secret</div>
+                </div>
+            </div>
+        }
+    </div>
+}

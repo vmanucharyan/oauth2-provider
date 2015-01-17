@@ -1,34 +1,34 @@
 package oauth2
 
-import play.Logger
 import play.api.cache.Cache
 import play.api.Play.current
-import play.api.mvc.{Session, AnyContent, Request}
+import play.api.mvc.{AnyContent, Request}
 
 object AuthInfo {
-  def isAuthorized(implicit rs: Request[AnyContent]): Boolean = {
-    val authHeader = rs.headers.get("Authorization")
-
-    Logger.debug(s"Header: $authHeader")
-    Logger.debug(s"session token: ${rs.session.get("token")}")
-
-    val userToken =
-      rs.headers.get("Authorization") match {
-        case Some(str) => Some(str)
-        case None => rs.session.get("token")
-      }
-
-    userToken match {
-      case Some(tokenValue) =>
-        val cacheToken = Cache.getAs[AccessToken](tokenValue)
-        Logger.debug(s"Cache token $cacheToken")
-
-        cacheToken match {
-          case Some(token) => true
-          case None => false
-        }
-
+  def isAuthorized(implicit rs: Request[AnyContent]): Boolean =
+    getUserToken() match {
+      case Some(tokenValue) => getAccessToken(tokenValue).isDefined
       case None => false
     }
-  }
+
+  def acessToken (implicit rs: Request[AnyContent]): Option[AccessToken] =
+    getUserToken() match {
+      case Some(userTokenString) => getAccessToken(userTokenString)
+      case None => None
+    }
+
+  private def getUserToken() (implicit rs: Request[AnyContent]): Option[String] =
+    checkHeader() match {
+      case Some(token) => Some(token)
+      case None => checkSession()
+    }
+
+  private def checkHeader() (implicit rs: Request[AnyContent]): Option[String] =
+    rs.headers.get("Authorization")
+
+  private def checkSession() (implicit rs: Request[AnyContent]): Option[String] =
+    rs.session.get("token")
+
+  private def getAccessToken(userToken: String) (implicit rs: Request[AnyContent]): Option[AccessToken] =
+    Cache.getAs[AccessToken](userToken)
 }

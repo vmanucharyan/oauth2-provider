@@ -1,3 +1,5 @@
+@(redirectUri: Option[String])
+
 @main("sign in") {
     <div class="col-md-6 col-md-offset-3">
         <div class="panel panel-primary">
@@ -7,9 +9,9 @@
 
             <div class="panel-body margin-small">
 
-                <form action="/signin/perform_signin" method="POST" class="form-horizontal">
+            <form action="@{routes.SignIn.performSignIn(redirectUri)}" method="POST" class="form-horizontal">
 
-                    <div class="form-group">
+                <div class="form-group">
                         <div>
                             <label for="input-email" class="label label-info">Электронная почта</label>
                         </div>
@@ -27,7 +29,9 @@
 
                     <div class="form-group">
                         <div class="pull-right margin-top-large margin-right-small">
-                            <button class="btn btn-default signin-btn-size"><a href="/register">Регистрация</a></button>
+                            <button class="btn btn-default signin-btn-size">
+                                <a href="/register">Регистрация</a>
+                            </button>
                             <input type="submit" value="Ок" class="btn btn-primary signin-btn-size"/>
                         </div>
                     </div>

@@ -31,6 +31,6 @@ object Register extends Controller {
 
     users.insert(user)
 
-    Redirect(routes.Application.index)
+    Redirect(routes.Application.index())
   }
 }
