@@ -2,7 +2,7 @@ package controllers
 
 import java.time.Duration
 
-import models.DatabaseAccess
+import models.DataProvider
 import models.oauth2.OAuthApp
 import oauth2._
 import play.Logger
@@ -59,10 +59,12 @@ object OAuth extends Controller {
 
           AuthSessionKeeper.storeToken(token)
 
-          DatabaseAccess.getApplication(clientId).map {
+          DataProvider.getApplication(clientId).map {
             case Some(app) =>
-              if (app.id == token.userId) Redirect(redirectUri, Map("token" -> Seq(tokenString)))
-              else Redirect(redirectUri, Map("error" -> Seq("app id does not match")))
+              if (app.id == token.userId && app.secret == clientSecret)
+                Redirect(redirectUri, Map("token" -> Seq(tokenString)))
+              else
+                Redirect(redirectUri, Map("error" -> Seq("app id does not match")))
 
             case None => Redirect(redirectUri, Map("error" -> Seq("app not found")))
           }

@@ -3,7 +3,7 @@ package controllers
 import java.time.{LocalTime, Duration}
 
 import oauth2.{AuthInfo, AuthSessionKeeper, AccessToken, AlphaNumericTokenGenerator}
-import models.{DatabaseAccess, UsersHelper}
+import models.{DataProvider, UsersHelper}
 import play.Logger
 import play.api.cache.Cache
 import play.api.data._
@@ -33,7 +33,7 @@ object SignIn extends Controller {
 
     val tokenGenerator = new AlphaNumericTokenGenerator()
 
-    DatabaseAccess.getUserById(m).map {
+    DataProvider.getUserById(m).map {
       case Some(user) =>
         val pwdHash = UsersHelper.hashPassword(pwd)
         if (pwdHash == user.passHash) {

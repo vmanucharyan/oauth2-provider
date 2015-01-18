@@ -23,7 +23,7 @@ object Register extends Controller {
     val passHash = UsersHelper.hashPassword(pass)
     val user = User(email, fullName, passHash)
 
-    DatabaseAccess.insertUser(user).map { e =>
+    DataProvider.insertUser(user).map { e =>
       Redirect(routes.Application.index())
     }
   }

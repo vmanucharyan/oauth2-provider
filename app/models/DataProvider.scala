@@ -6,7 +6,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.slick.driver.H2Driver.simple._
 import play.api.Play.current
 
-object DatabaseAccess {
+object DataProvider {
   private val users = TableQuery[UsersTable]
   private val apps = TableQuery[OAuthAppsTable]
 

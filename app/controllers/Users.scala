@@ -2,7 +2,7 @@ package controllers
 
 import models.oauth2.OAuthApp
 import oauth2.{RandomAppCredsGenerator, AuthInfo}
-import models.DatabaseAccess
+import models.DataProvider
 import play.api.mvc._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -10,7 +10,7 @@ import scala.concurrent.Future
 object Users extends Controller {
   def all = Action.async { implicit rs =>
     if (AuthInfo.isAuthorized) {
-      models.DatabaseAccess.getUsers()
+      models.DataProvider.getUsers()
         .map(users => Ok(views.html.users(users)))
     }
     else Future(Redirect(routes.SignIn.signIn()))
@@ -20,8 +20,8 @@ object Users extends Controller {
     AuthInfo.acessToken match {
       case Some(token) =>
         for {
-          user <- DatabaseAccess.getUserById(token.userId)
-          apps <- DatabaseAccess.getUserApps(token.userId)
+          user <- DataProvider.getUserById(token.userId)
+          apps <- DataProvider.getUserApps(token.userId)
         } yield {
           Ok(views.html.user_page(user.get, apps))
         }
@@ -37,7 +37,7 @@ object Users extends Controller {
         val id = appCredsGenerator.generateId()
         val secret = appCredsGenerator.generateKey()
 
-        DatabaseAccess.insertApplication(new OAuthApp(id, secret, token.userId)).map { f =>
+        DataProvider.insertApplication(new OAuthApp(id, secret, token.userId)).map { f =>
           Redirect(routes.Users.me())
         }
     }
