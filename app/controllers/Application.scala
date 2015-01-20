@@ -10,6 +10,6 @@ object Application extends Controller {
 
   def fill = Action { implicit request =>
     TestData.fill()
-    Ok(views.html.index())
+    Redirect(routes.Application.index())
   }
 }

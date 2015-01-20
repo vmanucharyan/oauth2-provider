@@ -1,13 +1,12 @@
 package controllers.api
 
-import controllers.api.Songs._
 import data.DataProvider
 import play.api.libs.json._
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object Artists {
+object Artists extends Controller {
   def all() = Action.async {
     DataProvider.getAllArtists() map { artists =>
       Ok(JsObject(Seq(

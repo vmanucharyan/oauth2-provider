@@ -15,6 +15,7 @@ object DataProvider {
   private val albums = TableQuery[AlbumsTable]
   private val artists = TableQuery[ArtistsTable]
 
+
   // Users
 
   def getUserById(id: String)(implicit context: ExecutionContext): Future[Option[User]] = Future {
@@ -80,7 +81,7 @@ object DataProvider {
     })
   }
 
-  def insertAlbum(album: Album) (implicit context: ExecutionContext) : Future[Unit] = {
+  def insertAlbum(album: Album) (implicit context: ExecutionContext) : Unit = {
     DB.withSession(implicit s => Future {
       albums.insert(album)
     })
@@ -113,7 +114,7 @@ object DataProvider {
     })
   }
 
-  def insertSong(song: Song) (implicit context: ExecutionContext) : Future[Unit] = Future {
+  def insertSong(song: Song) (implicit context: ExecutionContext) : Unit = {
     DB.withSession(implicit s => {
       songs.insert(song)
     })
@@ -140,7 +141,7 @@ object DataProvider {
 //    })
 //  }
 
-  def insertArtist(artist: Artist) (implicit context: ExecutionContext) : Future[Unit] = Future {
+  def insertArtist(artist: Artist) : Unit = {
     DB.withSession(implicit s => {
       artists.insert(artist)
     })

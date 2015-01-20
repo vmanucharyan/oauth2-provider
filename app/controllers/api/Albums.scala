@@ -1,6 +1,5 @@
 package controllers.api
 
-import controllers.api.Songs._
 import data.DataProvider
 import oauth2.AuthInfo
 import play.api.libs.json._
@@ -9,20 +8,20 @@ import play.api.mvc._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-object Albums {
+object Albums extends Controller {
   def all() = Action.async { implicit request =>
     if (!AuthInfo.isAuthorized) {
       Future(Unauthorized("unautorized"))
     } else {
-      DataProvider.getAllAlbums().map { artists =>
+      DataProvider.getAllAlbums().map { albums =>
         Ok(Json.prettyPrint(JsObject(Seq(
           "values" -> JsArray(
-            for (artist <- artists) yield JsObject(Seq(
-              "id" -> JsNumber(artist.id),
-              "name" -> JsString(artist.name),
-              "description" -> JsString(artist.description),
-              "year" -> JsNumber(artist.year),
-              "artist_id" -> JsNumber(artist.artistId)
+            for (album <- albums) yield JsObject(Seq(
+              "id" -> JsNumber(album.id),
+              "name" -> JsString(album.name),
+              "description" -> JsString(album.description),
+              "year" -> JsNumber(album.year),
+              "artist_id" -> JsNumber(album.artistId)
             ))
           )
         ))))
