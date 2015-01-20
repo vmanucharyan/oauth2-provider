@@ -34,7 +34,7 @@ object SignIn extends Controller {
 
     val tokenGenerator = new AlphaNumericTokenGenerator()
 
-    DataProvider.getUserById(m).map {
+    DataProvider.getUserById(m) map {
       case Some(user) =>
         val pwdHash = UsersHelper.hashPassword(pwd)
         if (pwdHash == user.passHash) {
