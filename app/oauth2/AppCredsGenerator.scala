@@ -7,7 +7,7 @@ trait AppCredsGenerator {
   def generateSecret(): String
 }
 
-class RandomAppCredsGenerator(val idLen: Int = 40, val secretLen: Int = 80) {
+class RandomAppCredsGenerator(val idLen: Int = 10, val secretLen: Int = 20) {
   def generateId(): String = String.join("", Random.alphanumeric take idLen toArray)
   def generateKey(): String = String.join("", Random.alphanumeric take secretLen toArray)
 }

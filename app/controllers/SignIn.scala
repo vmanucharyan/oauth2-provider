@@ -2,8 +2,9 @@ package controllers
 
 import java.time.{LocalTime, Duration}
 
+import data.DataProvider
 import oauth2.{AuthInfo, AuthSessionKeeper, AccessToken, AlphaNumericTokenGenerator}
-import models.{DataProvider, UsersHelper}
+import models.UsersHelper
 import play.Logger
 import play.api.cache.Cache
 import play.api.data._
@@ -37,15 +38,18 @@ object SignIn extends Controller {
       case Some(user) =>
         val pwdHash = UsersHelper.hashPassword(pwd)
         if (pwdHash == user.passHash) {
-          val token = new AccessToken(m, tokenGenerator.generateToken(), Duration.ofMinutes(5))
+          val token = new AccessToken(m, tokenGenerator.generateToken(), Duration.ofMinutes(5), "password")
 
           AuthSessionKeeper.storeToken(token)
 
           Logger.debug(s"$redirectUri")
 
           redirectUri match {
-            case Some(url) => Redirect(url).withSession("token" -> token.value)
-            case None => Redirect(routes.Application.index()).withSession("token" -> token.value)
+            case Some(url) => Redirect(url)
+              .withSession("token" -> token.value)
+
+            case None => Redirect(routes.Application.index())
+              .withSession("token" -> token.value)
           }
         }
         else BadRequest(views.html.static_pages.nosuchuser())

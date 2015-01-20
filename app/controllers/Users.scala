@@ -1,8 +1,8 @@
 package controllers
 
+import data.DataProvider
 import models.oauth2.OAuthApp
 import oauth2.{RandomAppCredsGenerator, AuthInfo}
-import models.DataProvider
 import play.api.mvc._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -10,7 +10,7 @@ import scala.concurrent.Future
 object Users extends Controller {
   def all = Action.async { implicit rs =>
     if (AuthInfo.isAuthorized) {
-      models.DataProvider.getUsers()
+      data.DataProvider.getUsers()
         .map(users => Ok(views.html.users(users)))
     }
     else Future(Redirect(routes.SignIn.signIn()))
@@ -40,6 +40,8 @@ object Users extends Controller {
         DataProvider.insertApplication(new OAuthApp(id, secret, token.userId)).map { f =>
           Redirect(routes.Users.me())
         }
+
+      case None => Future(Redirect(routes.SignIn.signIn(Some(routes.Users.registerApp().absoluteURL()))))
     }
   }
 }

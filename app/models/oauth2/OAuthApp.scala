@@ -20,7 +20,7 @@ class OAuthAppsTable(tag: Tag) extends Table[OAuthApp](tag, "OAUTH_APPS") {
 
 case class RedirectUrl(id: Long, appId: String, url: String)
 
-class RedirectUrlTable(tag: Tag) extends Table[RedirectUrl](tag, "OAUTH_REDIREC_URL") {
+class RedirectUrlTable(tag: Tag) extends Table[RedirectUrl](tag, "OAUTH_REDIRECT_URL") {
   def id = column[Long]("id", O.PrimaryKey)
   def appId = column[String]("app_id", O.NotNull)
   def url = column[String]("app_id")

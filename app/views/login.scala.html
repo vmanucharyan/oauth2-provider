@@ -9,9 +9,9 @@
 
             <div class="panel-body margin-small">
 
-            <form action="@{routes.SignIn.performSignIn(redirectUri)}" method="POST" class="form-horizontal">
+                <form action="@{routes.SignIn.performSignIn(redirectUri)}" method="POST" class="form-horizontal">
 
-                <div class="form-group">
+                    <div class="form-group">
                         <div>
                             <label for="input-email" class="label label-info">Электронная почта</label>
                         </div>
@@ -29,9 +29,7 @@
 
                     <div class="form-group">
                         <div class="pull-right margin-top-large margin-right-small">
-                            <button class="btn btn-default signin-btn-size">
-                                <a href="/register">Регистрация</a>
-                            </button>
+                            <a href="/register" class="btn btn-default signin-btn-size">Регистрация</a>
                             <input type="submit" value="Ок" class="btn btn-primary signin-btn-size"/>
                         </div>
                     </div>

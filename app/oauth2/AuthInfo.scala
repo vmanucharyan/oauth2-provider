@@ -1,5 +1,7 @@
 package oauth2
 
+import data.DataProvider
+import play.api.Logger
 import play.api.cache.Cache
 import play.api.Play.current
 import play.api.mvc.{AnyContent, Request}
@@ -19,7 +21,16 @@ object AuthInfo {
 
   def userId(implicit rs: Request[AnyContent]): Option[String] =
     acessToken match {
-      case Some(token) => Some(token.userId)
+      case Some(token) =>
+        if (token.tokenType == "password") {
+          Logger.debug(token.value)
+          Some(token.userId)
+        }
+        else DataProvider.getApplicationSync(token.userId) match {
+          case Some(app) => Some(app.userId)
+          case None => None
+        }
+
       case None => None
     }
 
