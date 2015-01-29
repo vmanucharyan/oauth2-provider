@@ -20,7 +20,7 @@ object OAuth extends Controller {
         case Some(app) =>
           Ok(views.html.oauth_grant_access(OAuthApp("id", "secret", "userId"), clientId, redirectUri, state))
 
-        case None => Ok("error: wrong client_id")
+        case None => Ok(JsObject(Seq("error" ->  JsString("wrong client_id"))))
       }
 
     }
@@ -34,8 +34,10 @@ object OAuth extends Controller {
     val codeGenerator = new RandAuthCodeGenerator()
     val code = codeGenerator.generate()
 
-    Cache.set(code, clientId)
-    
+    Logger.debug(s"grant_access: ${AuthInfo.userId}")
+
+    AuthSessionKeeper.storeOAuthCode(code, clientId, AuthInfo.userId.get)
+
     Logger.debug(s"grant_access: code: $code")
 
     Redirect (
@@ -52,23 +54,23 @@ object OAuth extends Controller {
 
     Logger.debug(s"/token: code - $code")
 
-    if (grantType != "bearer")
-      Future(Redirect(redirectUri, Map("error" -> Seq("grant_type must be 'bearer'"))))
+    if (grantType != "authorization_code")
+      Future(Redirect(redirectUri, Map("error" -> Seq("grant_type must be 'authorization_code'"))))
 
-    Cache.getAs[String](code) match {
-      case Some(cacheClientId) =>
+    AuthSessionKeeper.retreiveOAuthCode(code) match {
+      case Some((cacheClientId, cacheUserId)) =>
         Logger.debug(s"$clientId $cacheClientId")
 
         if (clientId equals cacheClientId) {
           val tokenGenerator = new AlphaNumericTokenGenerator()
           val tokenString = tokenGenerator.generateToken()
-          val token = new AccessToken(clientId, tokenString, Duration.ofMinutes(60))
+          val token = new AccessToken(cacheUserId, tokenString, Duration.ofMinutes(60))
 
           AuthSessionKeeper.storeToken(token)
 
           DataProvider.getApplication(clientId).map {
             case Some(app) =>
-              if (app.id == token.userId && app.secret == clientSecret)
+              if (app.id == clientId && app.secret == clientSecret)
                 Ok(JsObject(Seq(
                   "token" -> JsString(tokenString),
                   "expires_in" -> JsNumber(Duration.between(LocalDateTime.now(), token.expiresIn).getSeconds),
@@ -82,19 +84,19 @@ object OAuth extends Controller {
 
             case None =>
               Ok(JsObject(Seq(
-                "grant_type" -> JsString("wrong client_id")
+                "error" -> JsString("wrong client_id")
               )))
           }
         }
         else Future {
           Ok(JsObject(Seq(
-            "grant_type" -> JsString("invalid code")
+            "error" -> JsString("invalid code")
           )))
         }
 
       case None => Future {
         Ok(JsObject(Seq(
-          "grant_type" -> JsString("invalid code0")
+          "error" -> JsString("invalid code0")
         )))
       }
     }

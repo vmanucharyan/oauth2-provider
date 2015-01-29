@@ -21,13 +21,7 @@ object AuthInfo {
 
   def userId(implicit rs: Request[AnyContent]): Option[String] =
     acessToken match {
-      case Some(token) =>
-        if (token.tokenType == "password") Some(token.userId)
-        else DataProvider.getApplicationSync(token.userId) match {
-          case Some(app) => Some(app.userId)
-          case None => None
-        }
-
+      case Some(token) => Some(token.userId)
       case None => None
     }
 

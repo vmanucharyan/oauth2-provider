@@ -1,6 +1,7 @@
 package controllers.api
 
 import data.DataProvider
+import models.Album
 import oauth2.AuthInfo
 import play.api.libs.json._
 import play.api.mvc._
@@ -14,6 +15,31 @@ object Albums extends Controller {
       Future(Unauthorized("unautorized"))
     } else {
       DataProvider.getAllAlbums().map { albums =>
+        Ok(Json.prettyPrint(JsObject(Seq(
+          "values" -> JsArray(
+            for (album <- albums) yield JsObject(Seq(
+              "id" -> JsNumber(album.id),
+              "name" -> JsString(album.name),
+              "description" -> JsString(album.description),
+              "year" -> JsNumber(album.year),
+              "artist_id" -> JsNumber(album.artistId)
+            ))
+          )
+        ))))
+      } recover {
+        case e =>
+          InternalServerError(JsObject(Seq(
+            "error" -> JsString(e.getMessage)
+          )))
+      }
+    }
+  }
+
+  def ofArtist(artistId: Long) = Action.async { implicit request =>
+    if (!AuthInfo.isAuthorized) {
+      Future(Unauthorized("unautorized"))
+    } else {
+      DataProvider.getAllArtistsAlbums(artistId) map { albums =>
         Ok(Json.prettyPrint(JsObject(Seq(
           "values" -> JsArray(
             for (album <- albums) yield JsObject(Seq(
@@ -64,6 +90,29 @@ object Albums extends Controller {
             )))
         }
       }
+    }
+  }
+
+  def insertAlbum() = Action { implicit request =>
+    request.body.asJson match {
+      case Some(json) =>
+        try {
+          val album = Album(
+            name = (json \ "name").as[String],
+            description = (json \ "description").as[String],
+            year = (json \ "year").as[Int],
+            artistId = (json \ "artist_id").as[Long]
+          )
+
+          DataProvider.insertAlbum(album)
+
+          Ok(JsObject(Seq("message" -> JsString("success"))))
+        }
+        catch {
+          case e: Exception => InternalServerError(JsObject(Seq("error" -> JsString(e.getMessage))))
+        }
+
+      case None => BadRequest(JsObject(Seq("error" -> JsString("empty body"))))
     }
   }
 }

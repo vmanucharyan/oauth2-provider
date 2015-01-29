@@ -81,6 +81,12 @@ object DataProvider {
     })
   }
 
+  def getAllArtistsAlbums(artistId: Long) (implicit context: ExecutionContext) : Future[List[Album]] = Future {
+    DB.withSession(implicit s => {
+      albums.filter(e => e.artistId === artistId).list
+    })
+  }
+
   def insertAlbum(album: Album) (implicit context: ExecutionContext) : Unit = {
     DB.withSession(implicit s => Future {
       albums.insert(album)
@@ -117,6 +123,12 @@ object DataProvider {
   def insertSong(song: Song) (implicit context: ExecutionContext) : Unit = {
     DB.withSession(implicit s => {
       songs.insert(song)
+    })
+  }
+
+  def updateSong(song: Song): Unit = {
+    DB.withSession(implicit s => {
+      songs.filter(s => s.id === song.id).update(song)
     })
   }
   

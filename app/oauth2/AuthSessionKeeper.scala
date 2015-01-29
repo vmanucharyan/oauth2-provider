@@ -13,9 +13,9 @@ object AuthSessionKeeper {
   def removeToken(token: AccessToken): Unit =
     Cache.remove(token.value)
 
-  def storeOAuthCode(code: String, clientId: String): Unit =
-    Cache.set(code, clientId)
+  def storeOAuthCode(code: String, clientId: String, userId: String): Unit =
+    Cache.set(code, (clientId, userId))
 
-  def retreiveOAuthCode(code: String): Option[String] =
-    Cache.getAs[String](code)
+  def retreiveOAuthCode(code: String): Option[(String, String)] =
+    Cache.getAs[(String, String)](code)
 }

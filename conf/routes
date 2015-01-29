@@ -3,32 +3,43 @@
 # ~~~~
 
 # Home page
-GET         /                                 controllers.Application.index
+GET         /                                      controllers.Application.index
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file                     controllers.Assets.at(path="/public", file)
+GET         /assets/*file                          controllers.Assets.at(path="/public", file)
 
 # user
-GET         /users                            controllers.Users.all
-GET         /users/me                         controllers.Users.me
-GET         /register_app                     controllers.Users.registerApp
+GET         /users                                 controllers.Users.all
+GET         /users/me                              controllers.Users.me
+GET         /register_app                          controllers.Users.registerApp
 
 # register
-GET         /register                         controllers.Register.register
-POST        /register/perform_register        controllers.Register.performRegister
+GET         /register                              controllers.Register.register
+POST        /register/perform_register             controllers.Register.performRegister
 
 # sign in
-GET         /signin                           controllers.SignIn.signIn(redirect: Option[String] ?= None)
-POST        /signin/perform_signin            controllers.SignIn.performSignIn(redirect_uri: Option[String])
-GET         /sign_out                         controllers.SignIn.signOut()
+GET         /signin                                controllers.SignIn.signIn(redirect: Option[String] ?= None)
+POST        /signin/perform_signin                 controllers.SignIn.performSignIn(redirect_uri: Option[String])
+GET         /sign_out                              controllers.SignIn.signOut()
 
 # OAuth2
-GET         /oauth2/auth                      controllers.OAuth.auth(client_id: String, redirect_uri: String, state: String)
-GET         /oauth2/grant_access              controllers.OAuth.grantAccess(client_id: String, redirect_uri: String, state: String)
-GET         /oauth2/token                     controllers.OAuth.token(code: String, client_id: String, client_secret: String, redirect_uri: String, grant_type:String)
+GET         /oauth2/auth                           controllers.OAuth.auth(client_id: String, redirect_uri: String, state: String)
+GET         /oauth2/grant_access                   controllers.OAuth.grantAccess(client_id: String, redirect_uri: String, state: String)
+GET         /oauth2/token                          controllers.OAuth.token(code: String, client_id: String, client_secret: String, redirect_uri: String, grant_type:String)
 
 # data
-GET         /api/fill                         controllers.Application.fill()
-GET         /api/albums                       controllers.api.Albums.all()
-GET         /api/albums/:id                   controllers.api.Albums.id(id: Int)
-GET         /api/users/me                     controllers.api.Users.me()
+GET         /api/users/me                          controllers.api.Users.me()
+
+GET         /api/albums                            controllers.api.Albums.all()
+GET         /api/albums/:id                        controllers.api.Albums.id(id: Int)
+GET         /api/albums/of_artist/:artistId        controllers.api.Albums.ofArtist(artistId: Long)
+POST        /api/albums/new                        controllers.api.Albums.insertAlbum()
+
+GET         /api/songs                             controllers.api.Songs.all()
+GET         /api/songs/:id                         controllers.api.Songs.id(id: Int)
+POST        /api/songs/new                         controllers.api.Songs.insertSong()
+PUT         /api/songs/:id/edit                    controllers.api.Songs.update(id: Int)
+
+GET         /api/artists                           controllers.api.Artists.all()
+GET         /api/artists/:id                       controllers.api.Artists.id(id: Int)
+POST        /api/artists/new                       controllers.api.Artists.insertArtist()
