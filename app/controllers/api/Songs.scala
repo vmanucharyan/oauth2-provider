@@ -2,6 +2,7 @@ package controllers.api
 
 import data.DataProvider
 import models.Song
+import oauth2.AuthInfo
 import play.api.libs.json._
 import play.api.mvc._
 
@@ -9,8 +10,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 object Songs extends Controller {
-  def all() = Action.async {
-    DataProvider.getAllSongs().map { songs =>
+  def all() = Action.async { implicit request =>
+    if (!AuthInfo.isAuthorized) Future(Unauthorized(JsObject(Seq("error" -> JsString("unauthorized")))))
+    else DataProvider.getAllSongs().map { songs =>
       Ok(Json.prettyPrint(JsObject(Seq(
         "values" -> JsArray(
           for (song <- songs) yield JsObject(Seq(
@@ -26,7 +28,8 @@ object Songs extends Controller {
   }
 
   def id(id: Int) = Action.async { implicit request =>
-    DataProvider.getSong(id).map {
+    if (!AuthInfo.isAuthorized) Future(Unauthorized(JsObject(Seq("error" -> JsString("unauthorized")))))
+    else DataProvider.getSong(id).map {
       case Some(s) =>
         Ok(Json.prettyPrint(JsObject(Seq(
           "id" -> JsNumber(s.id),
@@ -50,17 +53,19 @@ object Songs extends Controller {
   }
 
   def insertSong() = Action { implicit request =>
-    request.body.asJson match {
+    if (!AuthInfo.isAuthorized) Unauthorized(JsObject(Seq("error" -> JsString("unauthorized"))))
+    else request.body.asJson match {
 
-      case Some(json) =>
-        try {
-          val song = parseSong(json)
-          DataProvider.insertSong(song)
-          Ok(JsObject(Seq("message" -> JsString("success"))))
-        }
-        catch {
-          case e: Exception => InternalServerError(JsObject(Seq("error" -> JsString(e.getMessage))))
-        }
+      case Some(json) => try {
+        val song = parseSong(json)
+        val id = DataProvider.insertSong(song)
+        Ok(JsObject(Seq(
+          "message" -> JsString("success"),
+          "id" -> JsNumber(id)
+        )))
+      } catch {
+        case e: Exception => InternalServerError(JsObject(Seq("error" -> JsString(e.getMessage))))
+      }
 
       case None => BadRequest(JsObject(Seq("error" -> JsString("empty body"))))
 
@@ -68,20 +73,20 @@ object Songs extends Controller {
   }
 
   def update(id: Long) = Action.async { implicit request =>
-    request.body.asJson match {
+    if (!AuthInfo.isAuthorized) Future(Unauthorized(JsObject(Seq("error" -> JsString("unauthorized")))))
+    else request.body.asJson match {
 
-      case Some(json) =>
+      case Some(json) => DataProvider.getSong(id) map {
 
-        DataProvider.getSong(id) map {
-          case Some(song) =>
-            val song = parseSong(json)
-            DataProvider.updateSong(song)
-            Ok(JsObject(Seq("message" -> JsString("success"))));
+        case Some(song) =>
+          val song = parseSong(json).copy(id = id)
+          DataProvider.updateSong(song)
+          Ok(JsObject(Seq("message" -> JsString("success"))));
 
-          case None =>
-            NotFound(JsObject(Seq("message" -> JsString(s"song with id='$id' not found"))))
+        case None =>
+          NotFound(JsObject(Seq("message" -> JsString(s"song with id='$id' not found"))))
 
-        }
+      }
 
       case None => Future(BadRequest(JsObject(Seq("error" -> JsString("empty body")))))
 

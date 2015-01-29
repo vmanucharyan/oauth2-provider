@@ -13,15 +13,17 @@ object Users extends Controller {
     AuthInfo.userId match {
       case Some(userId) =>
         DataProvider.getUserById(userId) map {
+
           case Some(user) => Ok(JsObject(Seq(
             "email" -> JsString(user.email),
             "full_name" -> JsString(user.fullName)
           )))
 
-          case None => InternalServerError("user not found in database")
+          case None => InternalServerError(JsObject(Seq("error" -> JsString("unauthorized"))))
+
         }
 
-      case None => Future(Unauthorized("unauthorized"))
+      case None => Future(Unauthorized(JsObject(Seq("error" -> JsString("unauthorized")))))
     }
   }
 }

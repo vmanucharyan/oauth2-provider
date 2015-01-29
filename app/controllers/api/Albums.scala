@@ -13,50 +13,47 @@ object Albums extends Controller {
   def all() = Action.async { implicit request =>
     if (!AuthInfo.isAuthorized) {
       Future(Unauthorized("unautorized"))
-    } else {
-      DataProvider.getAllAlbums().map { albums =>
-        Ok(Json.prettyPrint(JsObject(Seq(
-          "values" -> JsArray(
-            for (album <- albums) yield JsObject(Seq(
-              "id" -> JsNumber(album.id),
-              "name" -> JsString(album.name),
-              "description" -> JsString(album.description),
-              "year" -> JsNumber(album.year),
-              "artist_id" -> JsNumber(album.artistId)
-            ))
-          )
-        ))))
-      } recover {
-        case e =>
-          InternalServerError(JsObject(Seq(
-            "error" -> JsString(e.getMessage)
-          )))
-      }
+    } else DataProvider.getAllAlbums().map { albums =>
+      Ok(Json.prettyPrint(JsObject(Seq(
+        "values" -> JsArray(
+          for (album <- albums) yield JsObject(Seq(
+            "id" -> JsNumber(album.id),
+            "name" -> JsString(album.name),
+            "description" -> JsString(album.description),
+            "year" -> JsNumber(album.year),
+            "artist_id" -> JsNumber(album.artistId)
+          ))
+        )
+      ))))
+    } recover {
+      case e =>
+        InternalServerError(JsObject(Seq(
+          "error" -> JsString(e.getMessage)
+        )))
     }
   }
 
   def ofArtist(artistId: Long) = Action.async { implicit request =>
     if (!AuthInfo.isAuthorized) {
       Future(Unauthorized("unautorized"))
-    } else {
-      DataProvider.getAllArtistsAlbums(artistId) map { albums =>
-        Ok(Json.prettyPrint(JsObject(Seq(
-          "values" -> JsArray(
-            for (album <- albums) yield JsObject(Seq(
-              "id" -> JsNumber(album.id),
-              "name" -> JsString(album.name),
-              "description" -> JsString(album.description),
-              "year" -> JsNumber(album.year),
-              "artist_id" -> JsNumber(album.artistId)
-            ))
-          )
-        ))))
-      } recover {
-        case e =>
-          InternalServerError(JsObject(Seq(
-            "error" -> JsString(e.getMessage)
-          )))
-      }
+    }
+    else DataProvider.getAllArtistsAlbums(artistId) map { albums =>
+      Ok(Json.prettyPrint(JsObject(Seq(
+        "values" -> JsArray(
+          for (album <- albums) yield JsObject(Seq(
+            "id" -> JsNumber(album.id),
+            "name" -> JsString(album.name),
+            "description" -> JsString(album.description),
+            "year" -> JsNumber(album.year),
+            "artist_id" -> JsNumber(album.artistId)
+          ))
+        )
+      ))))
+    } recover {
+      case e =>
+        InternalServerError(JsObject(Seq(
+          "error" -> JsString(e.getMessage)
+        )))
     }
   }
 
@@ -94,19 +91,18 @@ object Albums extends Controller {
   }
 
   def insertAlbum() = Action { implicit request =>
-    request.body.asJson match {
-      case Some(json) =>
-        try {
-          val album = Album(
-            name = (json \ "name").as[String],
-            description = (json \ "description").as[String],
-            year = (json \ "year").as[Int],
-            artistId = (json \ "artist_id").as[Long]
-          )
+    if (!AuthInfo.isAuthorized) Unauthorized(JsObject(Seq("error" -> JsString("unauthorized"))))
+    else request.body.asJson match {
 
+      case Some(json) =>
+
+        try {
+          val album = parseAlbum(json)
           DataProvider.insertAlbum(album)
 
-          Ok(JsObject(Seq("message" -> JsString("success"))))
+          Ok(JsObject(Seq(
+            "message" -> JsString("success")
+          )))
         }
         catch {
           case e: Exception => InternalServerError(JsObject(Seq("error" -> JsString(e.getMessage))))
@@ -115,4 +111,29 @@ object Albums extends Controller {
       case None => BadRequest(JsObject(Seq("error" -> JsString("empty body"))))
     }
   }
+
+  def updateAlbum(id: Long) = Action { implicit request =>
+    if (!AuthInfo.isAuthorized) Unauthorized(JsObject(Seq("error" -> JsString("unauthorized"))))
+    else request.body.asJson match {
+
+      case Some(json) => try {
+        val album = parseAlbum(json).copy(id = id)
+        DataProvider.updateAlbum(album)
+
+        Ok(JsObject(Seq("message" -> JsString("success"))))
+      } catch {
+        case e: Exception => InternalServerError(JsObject(Seq("error" -> JsString(e.getMessage))))
+      }
+
+      case None => BadRequest(JsObject(Seq("error" -> JsString("empty body"))))
+
+    }
+  }
+
+  private def parseAlbum(json: JsValue): Album = Album(
+    name = (json \ "name").as[String],
+    description = (json \ "description").as[String],
+    year = (json \ "year").as[Int],
+    artistId = (json \ "artist_id").as[Long]
+  )
 }

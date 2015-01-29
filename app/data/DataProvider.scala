@@ -87,9 +87,15 @@ object DataProvider {
     })
   }
 
-  def insertAlbum(album: Album) (implicit context: ExecutionContext) : Unit = {
-    DB.withSession(implicit s => Future {
+  def insertAlbum(album: Album) (implicit context: ExecutionContext) : Long = {
+    DB.withSession(implicit s =>
       albums.insert(album)
+    )
+  }
+
+  def updateAlbum(album: Album): Unit = {
+    DB.withSession(implicit s => {
+      albums.filter(a => a.id === album.id).update(album)
     })
   }
 
@@ -120,9 +126,9 @@ object DataProvider {
     })
   }
 
-  def insertSong(song: Song) (implicit context: ExecutionContext) : Unit = {
+  def insertSong(song: Song) (implicit context: ExecutionContext) : Long = {
     DB.withSession(implicit s => {
-      songs.insert(song)
+      (songs returning songs.map(s => s.id)).insert(song)
     })
   }
 
@@ -153,9 +159,15 @@ object DataProvider {
 //    })
 //  }
 
-  def insertArtist(artist: Artist) : Unit = {
+  def insertArtist(artist: Artist) : Long = {
     DB.withSession(implicit s => {
-      artists.insert(artist)
+      (artists returning artists.map(a => a.id)).insert(artist)
+    })
+  }
+
+  def updateArtist(artist: Artist) : Unit = {
+    DB.withSession(implicit s => {
+      artists.filter(a => a.id === artist.id).update(artist)
     })
   }
 }

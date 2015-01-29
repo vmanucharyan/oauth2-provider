@@ -1,7 +1,5 @@
 package oauth2
 
-import data.DataProvider
-import play.api.Logger
 import play.api.cache.Cache
 import play.api.Play.current
 import play.api.mvc.{AnyContent, Request}
@@ -35,7 +33,13 @@ object AuthInfo {
     }
 
   private def checkHeader() (implicit rs: Request[AnyContent]): Option[String] =
-    rs.headers.get("Authorization")
+    rs.headers.get("Authorization") match {
+      case Some(str) => str.split(' ') match {
+        case Array(tokenType, tokenString) => Some(tokenString)
+        case _ => None
+      }
+      case None => None
+    }
 
   private def checkSession() (implicit rs: Request[AnyContent]): Option[String] =
     rs.session.get("token")
