@@ -46,18 +46,73 @@ object OAuth extends Controller {
     )
   }
 
-  def token(code: String,
-            clientId: String,
-            clientSecret: String,
-            redirectUri: String,
-            grantType: String) = Action.async { implicit request =>
+  def tokenGet(code: String,
+               clientId: String,
+               clientSecret: String,
+               redirectUri: String,
+               grantType: String) = Action.async { implicit request =>
 
     Logger.debug(s"/token: code - $code")
 
     if (grantType != "authorization_code")
       Future(Redirect(redirectUri, Map("error" -> Seq("grant_type must be 'authorization_code'"))))
+    else AuthSessionKeeper.retreiveOAuthCode(code) match {
+      case Some((cacheClientId, cacheUserId)) =>
+        Logger.debug(s"$clientId $cacheClientId")
 
-    AuthSessionKeeper.retreiveOAuthCode(code) match {
+        if (clientId equals cacheClientId) {
+          val tokenGenerator = new AlphaNumericTokenGenerator()
+          val tokenString = tokenGenerator.generateToken()
+          val token = new AccessToken(cacheUserId, tokenString, Duration.ofMinutes(60))
+
+          AuthSessionKeeper.storeToken(token)
+
+          DataProvider.getApplication(clientId).map {
+            case Some(app) =>
+              if (app.id == clientId && app.secret == clientSecret)
+                Ok(JsObject(Seq(
+                  "token" -> JsString(tokenString),
+                  "expires_in" -> JsNumber(Duration.between(LocalDateTime.now(), token.expiresIn).getSeconds),
+                  "grant_type" -> JsString("bearer")
+                )))
+
+              else
+                Ok(JsObject(Seq(
+                  "error" -> JsString("client_id does not match")
+                )))
+
+            case None =>
+              Ok(JsObject(Seq(
+                "error" -> JsString("wrong client_id")
+              )))
+          }
+        }
+        else Future {
+          Ok(JsObject(Seq(
+            "error" -> JsString("invalid code")
+          )))
+        }
+
+      case None => Future {
+        Ok(JsObject(Seq(
+          "error" -> JsString("invalid code0")
+        )))
+      }
+    }
+  }
+
+  def token() = Action.async { implicit request =>
+    val params = request.body.asFormUrlEncoded.get
+
+    val code = params("code")(0)
+    val clientSecret = params("client_secret")(0)
+    val clientId = params("client_id")(0)
+    val redirectUri = params("redirect_uri")(0)
+    val grantType = params("grant_type")(0)
+
+    if (grantType != "authorization_code")
+      Future(Redirect(redirectUri, Map("error" -> Seq("grant_type must be 'authorization_code'"))))
+    else AuthSessionKeeper.retreiveOAuthCode(code) match {
       case Some((cacheClientId, cacheUserId)) =>
         Logger.debug(s"$clientId $cacheClientId")
 

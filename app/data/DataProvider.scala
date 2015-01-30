@@ -6,7 +6,9 @@ import play.api.Play.current
 import play.api.db.slick._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.slick.driver.H2Driver.simple._
+//import scala.slick.driver.H2Driver.simple._
+import play.api.db.slick.Config.driver.simple._
+
 
 object DataProvider {
   private val users = TableQuery[UsersTable]
@@ -99,6 +101,9 @@ object DataProvider {
     })
   }
 
+  def deleteAlbum(id: Long): Unit = DB.withSession(implicit s =>
+    albums.filter(a => a.id === id).delete
+  )
 
   // Songs
 
@@ -137,6 +142,12 @@ object DataProvider {
       songs.filter(s => s.id === song.id).update(song)
     })
   }
+
+  def deleteSong(id: Long): Unit = {
+    DB.withSession(implicit s => {
+      songs.filter(s => s.id === id).delete
+    })
+  }
   
   
   // Artists
@@ -168,6 +179,12 @@ object DataProvider {
   def updateArtist(artist: Artist) : Unit = {
     DB.withSession(implicit s => {
       artists.filter(a => a.id === artist.id).update(artist)
+    })
+  }
+
+  def deleteArtist(id: Long) : Unit = {
+    DB.withSession(implicit s => {
+      artists.filter(a => a.id === id).delete
     })
   }
 }

@@ -130,6 +130,14 @@ object Albums extends Controller {
     }
   }
 
+  def delete(id: Long) = Action { implicit request =>
+    if (!AuthInfo.isAuthorized) Unauthorized(JsObject(Seq("error" -> JsString("unauthorized"))))
+    else {
+      DataProvider.deleteAlbum(id)
+      Ok(Json.obj("message" -> "success"))
+    }
+  }
+
   private def parseAlbum(json: JsValue): Album = Album(
     name = (json \ "name").as[String],
     description = (json \ "description").as[String],

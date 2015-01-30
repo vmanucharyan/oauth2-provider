@@ -92,6 +92,14 @@ object Artists extends Controller {
     }
   }
 
+  def delete(id: Long) = Action { implicit request =>
+    if (!AuthInfo.isAuthorized) Unauthorized(JsObject(Seq("error" -> JsString("unauthorized"))))
+    else {
+      DataProvider.deleteArtist(id)
+      Ok(Json.obj("message" -> "success"))
+    }
+  }
+
   private def parseArtist(js: JsValue): Artist = Artist (
     name = (js \ "name").as[String],
     description = (js \ "description").as[String]

@@ -93,6 +93,15 @@ object Songs extends Controller {
     }
   }
 
+  def delete(id: Long) = Action { implicit request =>
+    if (!AuthInfo.isAuthorized)
+      Unauthorized(Json.obj("error" -> JsString("unauthorized")))
+    else {
+      DataProvider.deleteSong(id)
+      Ok(Json.obj("message" -> "success"))
+    }
+  }
+
   private def parseSong(json: JsValue): Song = Song(
     name = (json \ "name").as[String],
     genre = (json \ "genre").as[String],
