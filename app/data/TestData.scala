@@ -8,7 +8,7 @@ object TestData {
 
     DataProvider.getArtist(1) map {
       case None =>
-        DataProvider.insertArtist(new Artist(
+        val ffId = DataProvider.insertArtist(new Artist(
           name = "Foo Fighters",
           description =
             """Foo Fighters — американская альтернативная рок-группа,
@@ -18,7 +18,7 @@ object TestData {
           id = 1
         ))
 
-        DataProvider.insertAlbum(new Album(
+        val wlId = DataProvider.insertAlbum(new Album(
           name = "Wasting Lights",
           year = 2010,
           description =
@@ -31,7 +31,7 @@ object TestData {
               |The Colour and the Shape (1997), хотя он играл на концертах Foo Fighters
               |ещё с 2006 года.""".stripMargin.replaceAll("\n", " "),
 
-          artistId = 1,
+          artistId = ffId,
           id = 1
         ))
 
@@ -39,37 +39,37 @@ object TestData {
           name = "Rope",
           genre = "Rock",
           durationSec = 259,
-          artistId = 1,
-          albumId = 1
+          artistId = ffId,
+          albumId = wlId
         ))
 
         DataProvider.insertSong(new Song(
           name = "Bridge Burning",
           genre = "Rock",
           durationSec = 284,
-          artistId = 1,
-          albumId = 1
+          artistId = ffId,
+          albumId = wlId
         ))
 
         DataProvider.insertSong(new Song(
           name = "Back & Forth",
           genre = "Rock",
           durationSec = 234,
-          artistId = 1,
-          albumId = 1
+          artistId = ffId,
+          albumId = wlId
         ))
 
         DataProvider.insertSong(new Song(
           name = "Walk",
           genre = "Rock",
-          artistId = 1,
           durationSec = 256,
-          albumId = 1
+          artistId = ffId,
+          albumId = wlId
         ))
 
 
 
-        DataProvider.insertAlbum(new Album(
+        val echoesId = DataProvider.insertAlbum(new Album(
           name = "Echoes, Silence, Patience & Grace",
           year = 2010,
           description =
@@ -77,16 +77,32 @@ object TestData {
               |выпущенный 25 сентября 2007 года. Альбом продюсировал Гил Нортон, уже работавший
               |с группой над её вторым альбомом, The Colour and the Shape.""".stripMargin.replaceAll("\n", " "),
 
-          artistId = 1,
+          artistId = ffId,
           id = 2
         ))
 
-        DataProvider.insertSong(new Song(
+        DataProvider.insertSong(Song(
           name = "The Pretender",
           genre = "Rock",
           durationSec = 256,
-          artistId = 1,
-          albumId = 2
+          artistId = ffId,
+          albumId = echoesId
+        ))
+
+        DataProvider.insertSong(Song(
+          name = "Long Road to Ruin",
+          genre = "Rock",
+          durationSec = 234,
+          artistId = ffId,
+          albumId = echoesId
+        ))
+
+        DataProvider.insertSong(Song(
+          name = "Home",
+          genre = "Rock",
+          durationSec = 278,
+          artistId = ffId,
+          albumId = echoesId
         ))
 
       case Some(_) =>

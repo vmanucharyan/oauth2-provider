@@ -39,7 +39,7 @@ PUT         /api/albums/:id/update                 controllers.api.Albums.update
 GET         /api/songs                             controllers.api.Songs.all()
 GET         /api/songs/:id                         controllers.api.Songs.id(id: Int)
 POST        /api/songs/new                         controllers.api.Songs.insertSong()
-PUT         /api/songs/:id/update                    controllers.api.Songs.update(id: Int)
+PUT         /api/songs/:id/update                  controllers.api.Songs.update(id: Int)
 
 GET         /api/artists                           controllers.api.Artists.all()
 GET         /api/artists/:id                       controllers.api.Artists.id(id: Int)
