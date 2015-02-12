@@ -1,6 +1,6 @@
 package data
 
-import models.oauth2.{OAuthApp, OAuthAppsTable}
+import models.oauth2._
 import models._
 import play.api.Play.current
 import play.api.db.slick._
@@ -16,7 +16,8 @@ object DataProvider {
   private val songs = TableQuery[SongsTable]
   private val albums = TableQuery[AlbumsTable]
   private val artists = TableQuery[ArtistsTable]
-
+  private val accessTokens = TableQuery[AccessTokenTable]
+  private val refreshTokens = TableQuery[RefreshTokenTable]
 
   // Users
 
@@ -71,6 +72,12 @@ object DataProvider {
     })
   }
 
+  def getAllAlbums(from: Int, count: Int) (implicit context: ExecutionContext) : Future[List[Album]] = Future {
+    DB.withSession(implicit s => {
+      albums.drop(from).take(count).list
+    })
+  }
+
   def getAlbum(id: Long) (implicit context: ExecutionContext) : Future[Option[Album]] = Future {
     DB.withSession(implicit s => {
       albums.filter(a => a.id === id).firstOption
@@ -110,6 +117,12 @@ object DataProvider {
   def getAllSongs() (implicit context: ExecutionContext) : Future[List[Song]] = Future {
     DB.withSession(implicit s => {
       songs.list
+    })
+  }
+
+  def getAllSongs(from: Int, count: Int) (implicit ec: ExecutionContext) : Future[List[Song]] = Future {
+    DB.withSession(implicit s => {
+      songs.drop(from).take(count).list
     })
   }
 
@@ -187,4 +200,45 @@ object DataProvider {
       artists.filter(a => a.id === id).delete
     })
   }
+
+
+  // Access tokens
+
+  def insertAccessToken(token: AccessToken) : Long = DB.withSession(implicit session => {
+    (accessTokens returning accessTokens.map(a => a.id)).insert(token)
+  })
+
+  def getAccessToken(id: Long) : Option[AccessToken] = DB.withSession(implicit session => {
+    accessTokens.filter(a => a.id === id).firstOption
+  })
+
+  def getAccessToken(value: String) : Option[AccessToken] = DB.withSession(implicit session => {
+    accessTokens.filter(a => a.value === value).firstOption
+  })
+
+  def deleteAccessToken(id: Long) : Unit = DB.withSession(implicit session => {
+    accessTokens.filter(a => a.id === id).delete
+  })
+
+  def getAccessTokenOfRefreshToken(refreshTokenId: Long) : AccessToken = DB.withSession(implicit session => {
+    accessTokens.filter(t => t.refreshTokenId === refreshTokenId).first
+  })
+
+  // Refresh tokens
+
+  def insertRefreshToken(token: RefreshToken) : Long = DB.withSession(implicit session => {
+    (refreshTokens returning refreshTokens.map(t => t.id)).insert(token)
+  })
+
+  def getRefreshToken(id: Long) : Option[RefreshToken] = DB.withSession(implicit session => {
+    refreshTokens.filter(t => t.id === id).firstOption
+  })
+
+  def getRefreshToken(value: String) : Option[RefreshToken] = DB.withSession(implicit session => {
+    refreshTokens.filter(t => t.value === value).firstOption
+  })
+
+  def deleteRefreshToken(id: Long) : Unit = DB.withSession(implicit session => {
+    refreshTokens.filter(t => t.id === id).delete
+  })
 }

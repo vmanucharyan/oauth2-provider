@@ -1,9 +1,10 @@
 package controllers
 
-import java.time.{LocalTime, Duration}
+import org.joda.time.{LocalDateTime, LocalTime, Duration}
 
 import data.DataProvider
-import oauth2.{AuthInfo, AuthSessionKeeper, AccessToken, AlphaNumericTokenGenerator}
+import models.oauth2.AccessToken
+import oauth2.{AuthInfo, AuthSessionKeeper, AlphaNumericTokenGenerator}
 import models.UsersHelper
 import play.Logger
 import play.api.cache.Cache
@@ -38,7 +39,7 @@ object SignIn extends Controller {
       case Some(user) =>
         val pwdHash = UsersHelper.hashPassword(pwd)
         if (pwdHash == user.passHash) {
-          val token = new AccessToken(m, tokenGenerator.generateToken(), Duration.ofMinutes(5), "password")
+          val token = new AccessToken(m, tokenGenerator.generateToken(), LocalDateTime.now().plusMinutes(60), "password", 0)
 
           AuthSessionKeeper.storeToken(token)
 

@@ -1,8 +1,8 @@
 package controllers
 
-import java.time.{LocalDateTime, Duration}
+import org.joda.time._
 import data.DataProvider
-import models.oauth2.OAuthApp
+import models.oauth2.{RefreshToken, AccessToken, OAuthApp}
 import oauth2._
 import play.Logger
 import play.api.libs.json._
@@ -16,6 +16,7 @@ import scala.concurrent.Future
 object OAuth extends Controller {
   def auth(clientId: String, redirectUri: String, state: String) = Action.async { implicit rs =>
     if (AuthInfo.isAuthorized) {
+
       DataProvider.getApplication(clientId) map {
         case Some(app) =>
           Ok(views.html.oauth_grant_access(OAuthApp("id", "secret", "userId"), clientId, redirectUri, state))
@@ -46,61 +47,6 @@ object OAuth extends Controller {
     )
   }
 
-  def tokenGet(code: String,
-               clientId: String,
-               clientSecret: String,
-               redirectUri: String,
-               grantType: String) = Action.async { implicit request =>
-
-    Logger.debug(s"/token: code - $code")
-
-    if (grantType != "authorization_code")
-      Future(Redirect(redirectUri, Map("error" -> Seq("grant_type must be 'authorization_code'"))))
-    else AuthSessionKeeper.retreiveOAuthCode(code) match {
-      case Some((cacheClientId, cacheUserId)) =>
-        Logger.debug(s"$clientId $cacheClientId")
-
-        if (clientId equals cacheClientId) {
-          val tokenGenerator = new AlphaNumericTokenGenerator()
-          val tokenString = tokenGenerator.generateToken()
-          val token = new AccessToken(cacheUserId, tokenString, Duration.ofMinutes(60))
-
-          AuthSessionKeeper.storeToken(token)
-
-          DataProvider.getApplication(clientId).map {
-            case Some(app) =>
-              if (app.id == clientId && app.secret == clientSecret)
-                Ok(JsObject(Seq(
-                  "token" -> JsString(tokenString),
-                  "expires_in" -> JsNumber(Duration.between(LocalDateTime.now(), token.expiresIn).getSeconds),
-                  "grant_type" -> JsString("bearer")
-                )))
-
-              else
-                Ok(JsObject(Seq(
-                  "error" -> JsString("client_id does not match")
-                )))
-
-            case None =>
-              Ok(JsObject(Seq(
-                "error" -> JsString("wrong client_id")
-              )))
-          }
-        }
-        else Future {
-          Ok(JsObject(Seq(
-            "error" -> JsString("invalid code")
-          )))
-        }
-
-      case None => Future {
-        Ok(JsObject(Seq(
-          "error" -> JsString("invalid code0")
-        )))
-      }
-    }
-  }
-
   def token() = Action.async { implicit request =>
     val params = request.body.asFormUrlEncoded.get
 
@@ -111,48 +57,81 @@ object OAuth extends Controller {
     val grantType = params("grant_type")(0)
 
     if (grantType != "authorization_code")
-      Future(Redirect(redirectUri, Map("error" -> Seq("grant_type must be 'authorization_code'"))))
+      Future(BadRequest(Json.obj("error" -> "ivalid_grant")))
     else AuthSessionKeeper.retreiveOAuthCode(code) match {
+
       case Some((cacheClientId, cacheUserId)) =>
+
         Logger.debug(s"$clientId $cacheClientId")
 
         if (clientId equals cacheClientId) {
           val tokenGenerator = new AlphaNumericTokenGenerator()
           val tokenString = tokenGenerator.generateToken()
-          val token = new AccessToken(cacheUserId, tokenString, Duration.ofMinutes(60))
+
+          val refreshToken = RefreshToken(tokenGenerator.generateToken())
+          val refreshTokenId = AuthSessionKeeper.storeRefreshToken(refreshToken)
+
+          val token = new AccessToken(cacheUserId, tokenString, LocalDateTime.now().plusMinutes(2), "bearer", refreshTokenId)
 
           AuthSessionKeeper.storeToken(token)
 
           DataProvider.getApplication(clientId).map {
             case Some(app) =>
               if (app.id == clientId && app.secret == clientSecret)
-                Ok(JsObject(Seq(
-                  "token" -> JsString(tokenString),
-                  "expires_in" -> JsNumber(Duration.between(LocalDateTime.now(), token.expiresIn).getSeconds),
-                  "grant_type" -> JsString("bearer")
-                )))
 
-              else
-                Ok(JsObject(Seq(
-                  "error" -> JsString("client_id does not match")
-                )))
+                Ok(Json.obj(
+                  "token" -> tokenString,
+                  "expires_in" -> JsNumber(Seconds.secondsBetween(LocalDateTime.now(), token.expiresIn).getSeconds),
+                  "grant_type" -> "bearer",
+                  "refresh_token" -> refreshToken.value
+                ))
 
-            case None =>
-              Ok(JsObject(Seq(
-                "error" -> JsString("wrong client_id")
-              )))
+              else BadRequest(Json.obj("error" -> "invalid_client"))
+
+            case None => BadRequest(Json.obj("error" -> "invalid_client"))
           }
         }
-        else Future {
-          Ok(JsObject(Seq(
-            "error" -> JsString("invalid code")
-          )))
-        }
 
-      case None => Future {
-        Ok(JsObject(Seq(
-          "error" -> JsString("invalid code0")
-        )))
+        else Future(BadRequest(Json.obj("error" -> "invalid_grant")))
+
+      case None => Future(BadRequest(Json.obj("error" -> "invalid code0")))
+    }
+  }
+
+  def refresh() = Action { implicit request =>
+    val params = request.body.asFormUrlEncoded.get
+
+    val refreshToken = params("refresh_token")(0)
+    val grantType = params("grant_type")(0)
+
+    if (grantType != "refresh_token") BadRequest(Json.obj("error" -> "unsupported_grant_type"))
+    else {
+      AuthSessionKeeper.retreiveRefreshToken(refreshToken) match {
+        case Some(token) =>
+          val accessToken = DataProvider.getAccessTokenOfRefreshToken(token.id)
+
+          val tokenGenerator = new AlphaNumericTokenGenerator()
+          val tokenString = tokenGenerator.generateToken()
+
+          val newToken = new AccessToken(
+            accessToken.userId,
+            tokenString,
+            LocalDateTime.now().plusMinutes(60),
+            "bearer",
+            token.id
+          )
+
+          AuthSessionKeeper.storeToken(newToken)
+          AuthSessionKeeper.removeToken(accessToken)
+
+          Ok(Json.obj(
+            "token" -> tokenString,
+            "expires_in" -> Seconds.secondsBetween(LocalDateTime.now(), newToken.expiresIn).getSeconds,
+            "grant_type" -> "bearer",
+            "refresh_token" -> token.value
+          ))
+
+        case None => BadRequest(Json.obj("error" -> "invalid_grant"))
       }
     }
   }

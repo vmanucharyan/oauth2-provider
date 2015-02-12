@@ -1,5 +1,8 @@
 package oauth2
 
+import java.util.NoSuchElementException
+
+import models.oauth2.AccessToken
 import play.api.cache.Cache
 import play.api.Play.current
 import play.api.mvc.{AnyContent, Request}
@@ -7,7 +10,19 @@ import play.api.mvc.{AnyContent, Request}
 object AuthInfo {
   def isAuthorized(implicit rs: Request[AnyContent]): Boolean =
     getUserToken() match {
-      case Some(tokenValue) => getAccessToken(tokenValue).isDefined
+      case Some(tokenValue) => getAccessToken(tokenValue) match {
+        case Some(token) => !token.isExpired
+        case None => false
+      }
+      case None => false
+    }
+
+  def isExpired(implicit rs: Request[AnyContent]): Boolean =
+    getUserToken() match {
+      case Some(tokenValue) => getAccessToken(tokenValue) match {
+        case Some(token) => token.isExpired
+        case None => throw new NoSuchElementException("token not found")
+      }
       case None => false
     }
 
@@ -51,5 +66,5 @@ object AuthInfo {
     }
 
   private def getAccessToken(userToken: String) (implicit rs: Request[AnyContent]): Option[AccessToken] =
-    Cache.getAs[AccessToken](userToken)
+    AuthSessionKeeper.retreiveToken(userToken)
 }
